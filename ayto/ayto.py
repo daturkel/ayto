@@ -8,8 +8,6 @@ from time import perf_counter
 
 import pandas as pd
 
-Pair = tuple[str, str]
-
 logger = logging.getLogger()
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
@@ -61,9 +59,9 @@ class AYTO:
 
     def apply_truth_booth(self, guy: str, girl: str, match: bool):
         """Update scenarios to reflect a Truth Booth outcome."""
-        self.apply_match_ceremony([(guy, girl)], int(match))
+        self.apply_matchup_ceremony([(guy, girl)], int(match))
 
-    def apply_match_ceremony(self, matchup: list[Pair], beams: int):
+    def apply_matchup_ceremony(self, matchup: list[tuple[str, str]], beams: int):
         """Update scenarios to reflect a Matchup Ceremony."""
         tic = perf_counter()
         matchup_ints = [-1] * self.n
@@ -72,13 +70,13 @@ class AYTO:
             girl_id = self.girl_ids[girl]
             matchup_ints[guy_id] = girl_id
 
-        self._apply_match_ceremony(matchup_ints, beams)
+        self._apply_matchup_ceremony(matchup_ints, beams)
         toc = perf_counter()
         if self.verbose:
             sec = round(toc - tic, 1)
             logger.info(f"Applied in {sec}s, {len(self.scenarios)} scenarios remain")
 
-    def _apply_match_ceremony(self, matchup: list[int], beams: int):
+    def _apply_matchup_ceremony(self, matchup: list[int], beams: int):
         self.scenarios = [
             scenario
             for scenario in self.scenarios
