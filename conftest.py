@@ -2,8 +2,8 @@ import pytest
 
 from ayto import AYTO
 
-GUYS = ["Albert", "Bob", "Charles", "Devin"]
-GIRLS = ["Emily", "Faith", "Gina", "Heather"]
+GUYS = ["Albert", "Bob", "Charles", "Devin", "Eli"]
+GIRLS = ["Faith", "Gina", "Heather", "Ingrid", "Joy"]
 
 
 @pytest.fixture()

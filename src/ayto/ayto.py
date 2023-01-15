@@ -4,8 +4,9 @@ from collections import defaultdict
 from itertools import permutations
 import logging
 import pickle
-from time import perf_counter
 
+import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 
 logger = logging.getLogger()
@@ -17,7 +18,7 @@ logger.addHandler(handler)
 class AYTO:
     """A class to calculate couple probabilities for a season of Are You the One."""
 
-    def __init__(self, guys: list[str], girls: list[str], verbose=False):
+    def __init__(self, guys: list[str], girls: list[str]):
         """This class tracks a season of Are You the One through Truth Booths and Matchup Ceremonies.
 
         Parameters
@@ -28,26 +29,26 @@ class AYTO:
         girls
             A list of the names of the girls. Order doesn't matter but duplicate names should
             be disambiguated (e.g. ["Jane B.", "Jane C."])
-        verbose
-            If `True`, the class will log messages with performance information and number
-            of scenarios remaining (default is `False`)
 
         """
         self.guys = guys
         self.girls = girls
         self.n = len(self.guys)
-        self.verbose = verbose
         self.guy_ids, self.girl_ids = self._generate_maps()
-        self.scenarios = self._generate_scenarios()
-        self.num_scenarios = len(self.scenarios)
+        self._scenarios = self._generate_scenarios()
         self._probs: defaultdict | None = None
 
     @property
-    def probs(self) -> pd.DataFrame:
+    def probabilities(self) -> pd.DataFrame:
         """A pandas dataframe of couple probabilities."""
         if self._probs is None:
-            self.calc_probs()
+            self.calculate_probabilities()
         return pd.DataFrame(self._probs)
+
+    @property
+    def num_scenarios(self) -> int:
+        """How many scenarios remain possible."""
+        return self._scenarios.shape[0]
 
     def _generate_maps(self) -> tuple[dict[str, int], dict[str, int]]:
         guy_ids = {name: id_ for id_, name in enumerate(self.guys)}
@@ -55,16 +56,11 @@ class AYTO:
 
         return guy_ids, girl_ids
 
-    def _generate_scenarios(self):
-        tic = perf_counter()
+    def _generate_scenarios(self) -> NDArray:
         girl_ids = [self.girl_ids[girl] for girl in self.girls]
         scenarios = list(permutations(girl_ids))
-        toc = perf_counter()
-        if self.verbose:
-            sec = round(toc - tic, 1)
-            logger.info(f"Generated {len(scenarios)} scenarios in {sec}s")
 
-        return scenarios
+        return np.array(scenarios)
 
     def _get_beams(self, scenario: tuple[int], matchup: list[int]) -> int:
         beams = 0
@@ -74,7 +70,9 @@ class AYTO:
 
         return beams
 
-    def apply_truth_booth(self, guy: str, girl: str, match: bool) -> int:
+    def apply_truth_booth(
+        self, guy: str, girl: str, match: bool, calc_probs=True
+    ) -> int:
         """Update scenarios to reflect a Truth Booth outcome.
 
         Parameters
@@ -85,6 +83,9 @@ class AYTO:
             Name of the girl in the Truth Booth
         match
             Whether or not the pair is a match
+        calc_probs
+            If `True`, recalculate couple probabilities after applying the truth booth
+            (default is `True`)
 
         Returns
         -------
@@ -92,11 +93,13 @@ class AYTO:
             Number of scenarios remaining
 
         """
-        self.apply_matchup_ceremony([(guy, girl)], int(match))
+        self.apply_matchup_ceremony([(guy, girl)], int(match), calc_probs)
 
         return self.num_scenarios
 
-    def apply_matchup_ceremony(self, matchup: list[tuple[str, str]], beams: int) -> int:
+    def apply_matchup_ceremony(
+        self, matchup: list[tuple[str, str]], beams: int, calc_probs=True
+    ) -> int:
         """Update scenarios to reflect a Matchup Ceremony.
 
         Parameters
@@ -106,6 +109,9 @@ class AYTO:
             names, e.g. [("Joe", "Sally"), ("Tim", "Jane")]
         beams
             How many beams (correct pairs) the ceremony generated
+        calc_probs
+            If `True`, recalculate couple probabilities after applying the matchup ceremony
+            (default is `True`)
 
         Returns
         -------
@@ -113,7 +119,16 @@ class AYTO:
             Number of scenarios remaining
 
         """
-        tic = perf_counter()
+        # ensure all names are known
+        for guy, girl in matchup:
+            if guy not in self.guy_ids:
+                valid = list(self.guy_ids.keys())
+                raise ValueError(f"Unknown name {guy}, must be one of {valid}")
+            elif girl not in self.girl_ids:
+                valid = list(self.girl_ids.keys())
+                raise ValueError(f"Unknown name {girl}, must be one of {valid}")
+
+        # put matchup in format understood by _apply_matchup_ceremony
         matchup_ints = [-1] * self.n
         for guy, girl in matchup:
             guy_id = self.guy_ids[guy]
@@ -121,31 +136,32 @@ class AYTO:
             matchup_ints[guy_id] = girl_id
 
         self._apply_matchup_ceremony(matchup_ints, beams)
-        toc = perf_counter()
-        if self.verbose:
-            sec = round(toc - tic, 1)
-            logger.info(f"Applied in {sec}s, {self.num_scenarios} scenarios remain")
+
+        if calc_probs:
+            self.calculate_probabilities()
 
         return self.num_scenarios
 
     def _apply_matchup_ceremony(self, matchup: list[int], beams: int):
-        self.scenarios = [
-            scenario
-            for scenario in self.scenarios
-            if self._get_beams(scenario, matchup) == beams
-        ]
-        self.num_scenarios = len(self.scenarios)
+        # count number of matches between matchup and each scenario
+        sums = (self._scenarios == matchup).sum(axis=1)
+        # true if number of matches is the number of beams, else false
+        idx = sums == beams
+        self._scenarios = self._scenarios[idx]
 
-    def calc_probs(self):
+    def calculate_probabilities(self):
         """Update the probabilities for each couple.
 
-        This method does not return anything. To see the probabilities, see the `prob`
+        This method does not return anything. To see the probabilities, access the `probabilities`
         attribute.
 
+        This method is only necessary if Truth Booths and Matchup Ceremonies are applied
+        with `calc_prob=False` (e.g. if you are applying multiple in a row and don't want
+        to calculate the probabilities until the end).
+
         """
-        tic = perf_counter()
         counter = defaultdict(lambda: defaultdict(int))
-        for scenario in self.scenarios:
+        for scenario in self._scenarios:
             for guy, girl in enumerate(scenario):
                 counter[guy][girl] += 1
 
@@ -155,11 +171,6 @@ class AYTO:
             for girl in self.girls:
                 girl_idx = self.girl_ids[girl]
                 self._probs[guy][girl] = counter[guy_idx][girl_idx] / total
-
-        toc = perf_counter()
-        if self.verbose:
-            sec = round(toc - tic, 1)
-            logger.info(f"Calculated probabilities in {sec}s")
 
     def save(self, path: str):
         """Save results to a file.

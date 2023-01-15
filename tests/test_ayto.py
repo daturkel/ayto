@@ -1,23 +1,53 @@
+import re
+
+import numpy as np
+import pytest
+
 from ayto import AYTO
 
 
 def test_num_scenarios(ayto_instance: AYTO):
-    assert ayto_instance.num_scenarios == 24
+    assert ayto_instance.num_scenarios == 120
 
 
 def test_truth_booth(ayto_instance: AYTO):
-    num_remaining = ayto_instance.apply_truth_booth("Albert", "Emily", True)
-    assert num_remaining == 6
+    num_remaining = ayto_instance.apply_truth_booth("Albert", "Gina", True)
+    assert num_remaining == 24
 
 
-def test_matchup(ayto_instance: AYTO):
-    num_remaining = ayto_instance.apply_matchup_ceremony(
-        [
-            ("Albert", "Emily"),
-            ("Bob", "Faith"),
-            ("Charles", "Gina"),
-            ("Devin", "Heather"),
-        ],
-        2,
-    )
-    assert num_remaining == 6
+class TestMatchup:
+    def test_matchup(self, ayto_instance: AYTO):
+        num_remaining = ayto_instance.apply_matchup_ceremony(
+            [
+                ("Albert", "Faith"),
+                ("Bob", "Gina"),
+                ("Charles", "Heather"),
+                ("Devin", "Ingrid"),
+                ("Eli", "Joy"),
+            ],
+            2,
+        )
+        assert num_remaining == 20
+
+    def test_results(self, ayto_instance: AYTO):
+        print(ayto_instance.probabilities.values)
+        assert np.allclose(
+            ayto_instance.probabilities.values,
+            [
+                [0.4, 0.15, 0.15, 0.15, 0.15],
+                [0.15, 0.4, 0.15, 0.15, 0.15],
+                [0.15, 0.15, 0.4, 0.15, 0.15],
+                [0.15, 0.15, 0.15, 0.4, 0.15],
+                [0.15, 0.15, 0.15, 0.15, 0.4],
+            ],
+        )
+
+
+def test_missing_name(ayto_instance: AYTO):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            r"Unknown name XYZ, must be one of ['Albert', 'Bob', 'Charles', 'Devin', 'Eli']"
+        ),
+    ):
+        ayto_instance.apply_matchup_ceremony([("XYZ", "ABC")], False)
