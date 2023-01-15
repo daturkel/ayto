@@ -17,6 +17,8 @@ logger.addHandler(handler)
 
 
 class AYTO:
+    """A class to calculate couple probabilities for a season of Are You the One."""
+
     def __init__(self, guys: list[str], girls: list[str], verbose=True):
         self.guys = guys
         self.girls = girls
@@ -58,9 +60,11 @@ class AYTO:
         return beams
 
     def apply_truth_booth(self, guy: str, girl: str, match: bool):
+        """Update scenarios to reflect a Truth Booth outcome."""
         self.apply_match_ceremony([(guy, girl)], int(match))
 
     def apply_match_ceremony(self, matchup: list[Pair], beams: int):
+        """Update scenarios to reflect a Matchup Ceremony."""
         tic = perf_counter()
         matchup_ints = [-1] * self.n
         for guy, girl in matchup:
@@ -82,6 +86,7 @@ class AYTO:
         ]
 
     def calc_probs(self):
+        """Update the probabilities for each couple."""
         tic = perf_counter()
         counter = defaultdict(lambda: defaultdict(int))
         for scenario in self.scenarios:
@@ -101,10 +106,12 @@ class AYTO:
             logger.info(f"Calculated probabilities in {sec}s")
 
     def save(self, path: str):
+        """Save results to a file."""
         with open(path, "wb") as f:
             pickle.dump(self, f)
 
     @classmethod
     def load(cls, path: str) -> AYTO:
+        """Load results from a file."""
         with open(path, "rb") as f:
             return pickle.load(f)
