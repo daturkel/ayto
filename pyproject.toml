@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ayto"
+version = "0.1.0"
+authors = [
+    { name="Dan Turkel", email="daturkel@gmail.com" }
+]
+description = "A Python library for calculating couple probabilites for the TV show *Are You the One?*"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = ["mypy>=0.991", "pytest>=7.2"]
+
+[project.urls]
+"Homepage" = "https://github.com/daturkel/ayto"
+"Bug Tracker" = "https://github.com/daturkel/ayto/issues"
+"Author's Website" = "https://danturkel.com"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = "src"
