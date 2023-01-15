@@ -1,5 +1,7 @@
 # AYTO
 
+[![PyPI version](https://badge.fury.io/py/ayto.svg)](https://badge.fury.io/py/ayto) ![Python version](https://img.shields.io/pypi/pyversions/ayto) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 A Python library for calculating couple probabilities for the TV show [Are You the One?](https://en.wikipedia.org/wiki/Are_You_the_One%3F).
 
 ## Installation
