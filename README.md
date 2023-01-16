@@ -12,6 +12,8 @@ pip install ayto
 
 ## Usage
 
+(For a fancier demo, see the [demo notebook](https://github.com/daturkel/ayto/blob/main/demo.ipynb).)
+
 ```python
 from ayto import AYTO
 

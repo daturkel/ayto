@@ -28,10 +28,12 @@ class TestMatchup:
                 ("Eli", "Joy"),
             ],
             2,
+            calc_probs=False,
         )
         assert num_remaining == 20
 
     def test_results(self, ayto_instance: AYTO):
+        ayto_instance.calculate_probabilities()
         assert np.allclose(
             ayto_instance.probabilities.values,
             [
