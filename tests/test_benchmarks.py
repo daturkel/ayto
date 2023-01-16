@@ -21,7 +21,7 @@ def test_benchmark_truth_booth(benchmark, names_long: list[str]):
     )
 
 
-def test_calc_probs(benchmark, names_long: list[str]):
+def test_benchmark_calc_probs(benchmark, names_long: list[str]):
     def setup():
         ayto_instance = AYTO(names_long, names_long)
         ayto_instance.apply_truth_booth(
