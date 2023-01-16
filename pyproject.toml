@@ -41,3 +41,6 @@ addopts = [
     "--benchmark-max-time=3",
 ]
 pythonpath = "src"
+
+[tool.ruff]
+ignore = ["E501"] # line length
