@@ -199,7 +199,9 @@ class AYTO:
 
         num_scenarios = these_scenarios.shape[0]
 
-        probs = defaultdict(lambda: defaultdict(float))
+        probs: defaultdict[str, defaultdict[str, float]] = defaultdict(
+            lambda: defaultdict(float)
+        )
 
         # iterate over guys
         for guy_idx, guy in enumerate(self.guys):
