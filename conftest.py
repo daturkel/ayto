@@ -7,13 +7,8 @@ GIRLS = ["Faith", "Gina", "Heather", "Ingrid", "Joy"]
 
 
 @pytest.fixture()
-def guys():
-    return GUYS
-
-
-@pytest.fixture()
-def girls():
-    return GIRLS
+def names_long():
+    return [str(i) for i in range(11)]
 
 
 @pytest.fixture(scope="class")

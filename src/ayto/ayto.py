@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from itertools import permutations
-import logging
 import pickle
 
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 
-logger = logging.getLogger()
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-logger.addHandler(handler)
+from .utils import faster_permutations
 
 
 class AYTO:
@@ -36,7 +31,7 @@ class AYTO:
         self.n = len(self.guys)
         self.guy_ids, self.girl_ids = self._generate_maps()
         self._scenarios = self._generate_scenarios()
-        self._probs: defaultdict | None = None
+        self._initialize_probs()
 
     @property
     def probabilities(self) -> pd.DataFrame:
@@ -57,18 +52,9 @@ class AYTO:
         return guy_ids, girl_ids
 
     def _generate_scenarios(self) -> NDArray:
-        girl_ids = [self.girl_ids[girl] for girl in self.girls]
-        scenarios = list(permutations(girl_ids))
+        scenarios = faster_permutations(self.n)
 
         return np.array(scenarios)
-
-    def _get_beams(self, scenario: tuple[int], matchup: list[int]) -> int:
-        beams = 0
-        for i, person in enumerate(matchup):
-            if person == scenario[i]:
-                beams += 1
-
-        return beams
 
     def apply_truth_booth(
         self, guy: str, girl: str, match: bool, calc_probs=True
@@ -149,6 +135,12 @@ class AYTO:
         idx = sums == beams
         self._scenarios = self._scenarios[idx]
 
+    def _initialize_probs(self):
+        self._probs = defaultdict(lambda: defaultdict(float))
+        for guy in self.guys:
+            for girl in self.girls:
+                self._probs[guy][girl] = 1 / self.n
+
     def calculate_probabilities(self):
         """Update the probabilities for each couple.
 
@@ -160,17 +152,21 @@ class AYTO:
         to calculate the probabilities until the end).
 
         """
-        counter = defaultdict(lambda: defaultdict(int))
-        for scenario in self._scenarios:
-            for guy, girl in enumerate(scenario):
-                counter[guy][girl] += 1
-
         self._probs = defaultdict(lambda: defaultdict(float))
+
+        # iterate over guys
         for guy_idx, guy in enumerate(self.guys):
-            total = sum(counter[guy_idx].values())
-            for girl in self.girls:
-                girl_idx = self.girl_ids[girl]
-                self._probs[guy][girl] = counter[guy_idx][girl_idx] / total
+            # get that guy's column of the scenarios dataframe
+            col = self._scenarios[:, guy_idx]
+            # construct a dictionary counting how many times each girl_idx appears (it's
+            # marginally faster than doing `count = (col == girl_idx).sum()` for each girl)
+            unique, counts = np.unique(col, return_counts=True)
+            count_dict = dict(zip(unique, counts))
+            for girl_idx, girl in enumerate(self.girls):
+                # populate probs dict with probaility = counts / num_scenarios
+                self._probs[guy][girl] = (
+                    count_dict.get(girl_idx, 0) / self.num_scenarios
+                )
 
     def save(self, path: str):
         """Save results to a file.

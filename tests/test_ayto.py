@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 import numpy as np
@@ -30,7 +32,6 @@ class TestMatchup:
         assert num_remaining == 20
 
     def test_results(self, ayto_instance: AYTO):
-        print(ayto_instance.probabilities.values)
         assert np.allclose(
             ayto_instance.probabilities.values,
             [
