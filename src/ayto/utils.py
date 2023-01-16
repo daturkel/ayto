@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 def faster_permutations(n: int) -> NDArray:
     """Generate a numpy array of the permutations 0 to n-1.
 
-    Source: Daniel Giger's StackOverflow answer: https://stackoverflow.com/a/71231033
+    Source: Daniel Giger's Stack Overflow answer: https://stackoverflow.com/a/71231033
 
     """
     # empty() is fast because it does not initialize the values of the array
