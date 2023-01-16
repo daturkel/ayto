@@ -152,19 +152,21 @@ class AYTO:
         to calculate the probabilities until the end).
 
         """
-        counter = defaultdict(lambda: defaultdict(int))
-
-        for scenario in self._scenarios:
-            for guy, girl in enumerate(scenario):
-                counter[guy][girl] += 1
-
         self._probs = defaultdict(lambda: defaultdict(float))
 
+        # iterate over guys
         for guy_idx, guy in enumerate(self.guys):
-            total = sum(counter[guy_idx].values())
-            for girl in self.girls:
-                girl_idx = self.girl_ids[girl]
-                self._probs[guy][girl] = counter[guy_idx][girl_idx] / total
+            # get that guy's column of the scenarios dataframe
+            col = self._scenarios[:, guy_idx]
+            # construct a dictionary counting how many times each girl_idx appears (it's
+            # marginally faster than doing `count = (col == girl_idx).sum()` for each girl)
+            unique, counts = np.unique(col, return_counts=True)
+            count_dict = dict(zip(unique, counts))
+            for girl_idx, girl in enumerate(self.girls):
+                # populate probs dict with probaility = counts / num_scenarios
+                self._probs[guy][girl] = (
+                    count_dict.get(girl_idx, 0) / self.num_scenarios
+                )
 
     def save(self, path: str):
         """Save results to a file.

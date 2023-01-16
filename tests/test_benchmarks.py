@@ -15,6 +15,7 @@ def test_benchmark_truth_booth(benchmark, names_long: list[str]):
             names_long[0], names_long[0], False, calc_probs=False
         ),
         setup=setup,
+        rounds=5,
     )
 
 
@@ -26,4 +27,4 @@ def test_calc_probs(benchmark, names_long: list[str]):
         )
         return ((ayto_instance,), {})
 
-    benchmark.pedantic(lambda x: x.calculate_probabilities(), setup=setup)
+    benchmark.pedantic(lambda x: x.calculate_probabilities(), setup=setup, rounds=5)

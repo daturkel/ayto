@@ -36,8 +36,8 @@ dev = ["mypy>=0.991", "pytest>=7.2", "pytest-benchmark>=4.0"]
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
-    "--benchmark-min-rounds=1",
     "--benchmark-columns=median,max,stddev,rounds",
-    "--benchmark-name=short"
+    "--benchmark-name=short",
+    "--benchmark-max-time=5",
 ]
 pythonpath = "src"
