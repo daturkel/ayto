@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy>=0.991", "pytest>=7.2"]
+dev = ["mypy>=0.991", "pytest>=7.2", "pytest-benchmark>=4.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/daturkel/ayto"
@@ -36,5 +36,8 @@ dev = ["mypy>=0.991", "pytest>=7.2"]
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
+    "--benchmark-min-rounds=1",
+    "--benchmark-columns=median,max,stddev,rounds",
+    "--benchmark-name=short"
 ]
 pythonpath = "src"

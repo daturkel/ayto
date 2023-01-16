@@ -30,7 +30,6 @@ class TestMatchup:
         assert num_remaining == 20
 
     def test_results(self, ayto_instance: AYTO):
-        print(ayto_instance.probabilities.values)
         assert np.allclose(
             ayto_instance.probabilities.values,
             [
