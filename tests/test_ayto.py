@@ -60,7 +60,7 @@ def test_missing_name_girl(ayto_instance: AYTO):
     with pytest.raises(
         ValueError,
         match=re.escape(
-            r"Unknown name XYZ, must be one of ['Faith', 'Gina', 'Heather', 'Ingrid', 'Joy']"
+            r"Unknown name ABC, must be one of ['Faith', 'Gina', 'Heather', 'Ingrid', 'Joy']"
         ),
     ):
         ayto_instance.apply_matchup_ceremony([("Albert", "ABC")], False)
