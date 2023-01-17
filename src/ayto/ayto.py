@@ -135,7 +135,7 @@ class AYTO:
         if (matches is None) and (non_matches is None):
             raise ValueError("Either matches, non_matches, or both must be provided.")
 
-        idx = [True] * self.num_scenarios
+        idx = np.array([True] * self.num_scenarios)
 
         # index = index & (all matches are true)
         if matches:
