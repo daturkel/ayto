@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 import json
+from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
@@ -32,6 +33,7 @@ class AYTO:
         self.guy_ids, self.girl_ids = self._initialize_maps()
         self._scenarios = self._initialize_scenarios()
         self._initialize_probs()
+        self.history: list[dict] = []
 
     @property
     def num_scenarios(self) -> int:
@@ -61,7 +63,15 @@ class AYTO:
             Number of scenarios remaining
 
         """
-        self.apply_matchup_ceremony([(guy, girl)], int(match), calc_probs)
+        idx = self._get_matchup_idx([(guy, girl)], int(match))
+        self._scenarios = self._scenarios[idx]
+
+        if calc_probs:
+            self.calculate_probabilities()
+
+        self.history.append(
+            {"type": "truth_booth", "guy": guy, "girl": girl, "match": match}
+        )
 
         return self.num_scenarios
 
@@ -87,15 +97,15 @@ class AYTO:
             Number of scenarios remaining
 
         """
-        # put matchup in format understood by _apply_matchup_ceremony (will raise an exception
-        # if there are any unknown names)
-        matchup_ints = self._parse_matchup(matchup)
-
-        idx = self._get_matchup_idx(matchup_ints, beams)
+        idx = self._get_matchup_idx(matchup, beams)
         self._scenarios = self._scenarios[idx]
 
         if calc_probs:
             self.calculate_probabilities()
+
+        self.history.append(
+            {"type": "matchup_ceremony", "matchup": matchup, "beams": beams}
+        )
 
         return self.num_scenarios
 
@@ -139,16 +149,14 @@ class AYTO:
 
         # index = index & (all matches are true)
         if matches:
-            match_ints = self._parse_matchup(matches)
-            match_idx = self._get_matchup_idx(match_ints, len(matches))
+            match_idx = self._get_matchup_idx(matches, len(matches))
             idx = idx & match_idx
 
         if non_matches:
             # for each nonmatch
             for non_match in non_matches:
                 # index = index & this match is not true
-                non_match_ints = self._parse_matchup([non_match])
-                non_match_idx = self._get_matchup_idx(non_match_ints, 1)
+                non_match_idx = self._get_matchup_idx([non_match], 1)
                 idx = idx & ~non_match_idx
 
         scenarios = self._scenarios[idx]
@@ -207,9 +215,10 @@ class AYTO:
 
         self.probabilities = pd.DataFrame(probs)
 
-    def _get_matchup_idx(self, matchup: list[int], beams: int) -> NDArray:
+    def _get_matchup_idx(self, matchup: list[tuple[str, str]], beams: int) -> NDArray:
+        matchup_list = self._parse_matchup(matchup)
         # count number of matches between matchup and each scenario
-        sums = (self._scenarios == matchup).sum(axis=1)
+        sums = (self._scenarios == matchup_list).sum(axis=1)
         # true if number of matches is the number of beams, else false
         idx = sums == beams
         return idx
@@ -244,32 +253,29 @@ class AYTO:
 
         return pd.DataFrame(probs)
 
-    def save(self, path: str):
+    def _serialize(self) -> dict:
+        return {"guys": self.guys, "girls": self.girls, "history": self.history}
+
+    def save(self, path: Path | str):
         """Save results to a file.
 
         Parameters
         ----------
         path
-            Filepath to save the class to (e.g. "season_5.pickle")
+            Filepath to save the class to (e.g. "season_5.json")
 
         """
-        data = {
-            "guys": self.guys,
-            "girls": self.girls,
-            "scenarios": self._scenarios.tolist(),
-            "probabilities": self.probabilities.values.tolist(),
-        }
         with open(path, "w") as f:
-            json.dump(data, f)
+            json.dump(self._serialize(), f)
 
     @classmethod
-    def load(cls, path: str) -> AYTO:
+    def load(cls, path: Path | str) -> AYTO:
         """Load results from a file.
 
         Parameters
         ----------
         path
-            Filepath to load the class from (e.g. "season_5.pickle")
+            Filepath to load the class from (e.g. "season_5.json")
 
         Returns
         -------
@@ -280,8 +286,19 @@ class AYTO:
         with open(path, "r") as f:
             data = json.load(f)
 
+        # json doesn't support tuples, so we re-tuple-ize the matchup ceremonies
+        for event in data["history"]:
+            if event["type"] == "matchup_ceremony":
+                event["matchup"] = [tuple(pair) for pair in event["matchup"]]
+
         instance = cls(data["guys"], data["girls"])
-        instance._scenarios = np.array(data["scenarios"], dtype=np.uint8, order="F")
-        instance.probabilities.loc[:, :] = data["probabilities"]
+        for event in data["history"]:
+            event_type = event.pop("type")
+            if event_type == "truth_booth":
+                instance.apply_truth_booth(**event, calc_probs=False)
+            elif event_type == "matchup_ceremony":
+                instance.apply_matchup_ceremony(**event, calc_probs=False)
+
+        instance.calculate_probabilities()
 
         return instance
