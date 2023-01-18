@@ -122,6 +122,7 @@ def test_missing_name_girl(ayto_instance: AYTO):
 
 class TestTryPartial:
     def test_try_partial_matches(self, ayto_instance: AYTO):
+        ayto_instance.apply_truth_booth("Eli", "Joy", False)
         scenarios, p, probs = ayto_instance.try_partial_scenario(
             matches=[("Albert", "Faith"), ("Bob", "Gina")]
         )
@@ -131,13 +132,13 @@ class TestTryPartial:
                 [
                     [1, 0, 0, 0, 0],
                     [0, 1, 0, 0, 0],
-                    [0, 0, 1 / 3, 1 / 3, 1 / 3],
-                    [0, 0, 1 / 3, 1 / 3, 1 / 3],
-                    [0, 0, 1 / 3, 1 / 3, 1 / 3],
+                    [0, 0, 0.25, 0.25, 0.5],
+                    [0, 0, 0.25, 0.25, 0.5],
+                    [0, 0, 0.5, 0.5, 0],
                 ]
             ),
         )
-        assert (scenarios, p, probs_close) == (6, 0.05, True)
+        assert (scenarios, p, probs_close) == (4, 1 / 24, True)
 
     def test_try_partial_non_matches(self, ayto_instance: AYTO):
         scenarios, p, probs = ayto_instance.try_partial_scenario(
@@ -146,14 +147,14 @@ class TestTryPartial:
         probs_close = np.allclose(
             probs.values,
             [
-                [0, 4 / 13, 3 / 13, 3 / 13, 3 / 13],
-                [4 / 13, 0, 3 / 13, 3 / 13, 3 / 13],
-                [3 / 13, 3 / 13, 7 / 39, 7 / 39, 7 / 39],
-                [3 / 13, 3 / 13, 7 / 39, 7 / 39, 7 / 39],
-                [3 / 13, 3 / 13, 7 / 39, 7 / 39, 7 / 39],
+                [0, 9 / 32, 7 / 32, 7 / 32, 9 / 32],
+                [9 / 32, 0, 7 / 32, 7 / 32, 9 / 32],
+                [7 / 32, 7 / 32, 11 / 64, 11 / 64, 7 / 32],
+                [7 / 32, 7 / 32, 11 / 64, 11 / 64, 7 / 32],
+                [9 / 32, 9 / 32, 7 / 32, 7 / 32, 0],
             ],
         )
-        assert (scenarios, p, probs_close) == (78, 0.65, True)
+        assert (scenarios, p, probs_close) == (64, 2 / 3, True)
 
     def test_try_partial_both(self, ayto_instance: AYTO):
         scenarios, p, probs = ayto_instance.try_partial_scenario(
@@ -165,21 +166,40 @@ class TestTryPartial:
             np.array(
                 [
                     [1, 0, 0, 0, 0],
-                    [0, 0, 3 / 7, 2 / 7, 2 / 7],
-                    [0, 3 / 7, 0, 2 / 7, 2 / 7],
-                    [0, 2 / 7, 2 / 7, 3 / 14, 3 / 14],
-                    [0, 2 / 7, 2 / 7, 3 / 14, 3 / 14],
+                    [0, 0, 4 / 11, 3 / 11, 4 / 11],
+                    [0, 4 / 11, 0, 3 / 11, 4 / 11],
+                    [0, 3 / 11, 3 / 11, 2 / 11, 3 / 11],
+                    [0, 4 / 11, 4 / 11, 3 / 11, 0],
                 ]
             ),
         )
-        assert (scenarios, p, probs_close) == (14, 14 / 120, True)
+        assert (scenarios, p, probs_close) == (11, 11 / 96, True)
 
     def test_partial_is_temporary(self, ayto_instance: AYTO):
         assert all(
             [
-                ayto_instance.history == [],
-                ayto_instance.num_scenarios == 120,
-                np.allclose(ayto_instance.probabilities, 1 / 5),
+                ayto_instance.history
+                == [
+                    {
+                        "type": "truth_booth",
+                        "guy": "Eli",
+                        "girl": "Joy",
+                        "match": False,
+                    }
+                ],
+                ayto_instance.num_scenarios == 96,
+                np.allclose(
+                    ayto_instance.probabilities.values,
+                    np.array(
+                        [
+                            [3 / 16, 3 / 16, 3 / 16, 3 / 16, 0.25],
+                            [3 / 16, 3 / 16, 3 / 16, 3 / 16, 0.25],
+                            [3 / 16, 3 / 16, 3 / 16, 3 / 16, 0.25],
+                            [3 / 16, 3 / 16, 3 / 16, 3 / 16, 0.25],
+                            [0.25, 0.25, 0.25, 0.25, 0],
+                        ]
+                    ),
+                ),
             ]
         )
 
