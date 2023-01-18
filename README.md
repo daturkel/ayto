@@ -12,7 +12,7 @@ pip install ayto
 
 ## Usage
 
-(For a fancier demo, see the [demo notebook](https://github.com/daturkel/ayto/blob/main/demo.ipynb).)
+For a walkthrough of all of `ayto`'s functionality, see the [demo notebook](https://github.com/daturkel/ayto/blob/main/demo.ipynb).
 
 ```python
 from ayto import AYTO
@@ -40,6 +40,16 @@ scenarios_left = season.apply_matchup_ceremony(
 print(f"{scenarios_left} scenarios remain")
 
 print(season.probabilities)
+#         Albert  Billy  Carl
+# Daisy      0.0    0.5   0.5
+# Emily      0.5    0.0   0.5
+# Faith      0.5    0.5   0.0
+
+season.save("my_season")
+
+# ...later, to restore everything:
+loaded_season = AYTO.load("my_season")
+print(loaded_season.probabilities)
 #         Albert  Billy  Carl
 # Daisy      0.0    0.5   0.5
 # Emily      0.5    0.0   0.5
