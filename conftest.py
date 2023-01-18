@@ -14,3 +14,8 @@ def names_long():
 @pytest.fixture(scope="class")
 def ayto_instance():
     return AYTO(GUYS, GIRLS)
+
+
+@pytest.fixture(scope="session")
+def path(tmp_path_factory):
+    return tmp_path_factory.mktemp("temp")
