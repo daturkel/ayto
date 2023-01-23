@@ -63,7 +63,17 @@ class AYTO:
             Number of scenarios remaining
 
         """
-        idx = self._get_matchup_idx([(guy, girl)], int(match))
+        ids = []
+        for name, lookup in [(guy, self.guy_ids), (girl, self.girl_ids)]:
+            try:
+                ids.append(lookup[name])
+            except KeyError:
+                valid = list(lookup.keys())
+                raise ValueError(f"Unknown name {name}, must be one of {valid}")
+
+        guy_idx, girl_idx = ids
+
+        idx = self._get_truth_booth_idx(guy_idx, girl_idx, match)
         self._scenarios = self._scenarios[idx]
 
         if calc_probs:
@@ -221,6 +231,13 @@ class AYTO:
         sums = (self._scenarios == matchup_list).sum(axis=1)
         # true if number of matches is the number of beams, else false
         idx = sums == beams
+        return idx
+
+    def _get_truth_booth_idx(self, guy_idx: int, girl_idx: int, match: bool) -> NDArray:
+        idx = self._scenarios[:, guy_idx] == girl_idx
+        if not match:
+            idx = ~idx
+
         return idx
 
     def _calculate_probabilities(self, scenarios: NDArray | None = None):

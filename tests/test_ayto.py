@@ -120,6 +120,16 @@ def test_missing_name_girl(ayto_instance: AYTO):
         ayto_instance.apply_matchup_ceremony([("Albert", "ABC")], False)
 
 
+def test_missing_name_truth_booth(ayto_instance: AYTO):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            r"Unknown name s, must be one of ['Albert', 'Bob', 'Charles', 'Devin', 'Eli']"
+        ),
+    ):
+        ayto_instance.apply_truth_booth("s", "a", True)
+
+
 class TestTryPartial:
     def test_try_partial_matches(self, ayto_instance: AYTO):
         ayto_instance.apply_truth_booth("Eli", "Joy", False)
