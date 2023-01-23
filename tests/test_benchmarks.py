@@ -21,6 +21,20 @@ def test_benchmark_truth_booth(benchmark, names_long: list[str]):
     )
 
 
+def test_benchmark_matchup_ceremony(benchmark, names_long: list[str]):
+    def setup():
+        ayto_instance = AYTO(names_long, names_long)
+        return ((ayto_instance,), {})
+
+    matchup = [(name, name) for name in names_long]
+
+    benchmark.pedantic(
+        lambda x: x.apply_matchup_ceremony(matchup, 3, calc_probs=False),
+        setup=setup,
+        rounds=5,
+    )
+
+
 def test_benchmark_calc_probs(benchmark, names_long: list[str]):
     def setup():
         ayto_instance = AYTO(names_long, names_long)
